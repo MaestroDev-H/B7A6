@@ -1,0 +1,391 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================================
+// ENUMS
+// ==========================================================
+
+enum Role {
+  ADMIN
+  OWNER
+  TENANT
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  STUDIO
+  DORMITORY
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  UNDER_MAINTENANCE
+  INACTIVE
+}
+
+enum ViewingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum TenancyStatus {
+  ACTIVE
+  ENDED
+  TERMINATED
+}
+
+enum InvoiceType {
+  RENT
+  DEPOSIT
+  UTILITY
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  VIEWING
+  APPLICATION
+  TENANCY
+  PAYMENT
+  MAINTENANCE
+  SYSTEM
+}
+
+// ==========================================================
+// CORE USER
+// ==========================================================
+
+model User {
+  id             String       @id @default(uuid())
+  name           String
+  email          String       @unique
+  password       String?
+  phone          String?
+  avatar         String?
+  role           Role         @default(TENANT)
+  provider       AuthProvider @default(LOCAL)
+  googleId       String?      @unique
+  isVerified     Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  refreshToken   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  // Owner side
+  properties         Property[]         @relation("OwnerProperties")
+
+  // Tenant side
+  roommatePreference RoommatePreference?
+  viewingRequests    ViewingRequest[]   @relation("TenantViewings")
+  applications       Application[]      @relation("TenantApplications")
+  tenancies          Tenancy[]          @relation("TenantTenancies")
+  maintenanceReqs    MaintenanceRequest[] @relation("TenantMaintenance")
+
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  invoicesPaid   Invoice[]     @relation("InvoiceRecipient")
+  payments       Payment[]
+
+  @@index([role])
+  @@index([email])
+  @@map("users")
+}
+
+// ==========================================================
+// PROPERTY / ROOM
+// ==========================================================
+
+model Property {
+  id          String       @id @default(uuid())
+  ownerId     String
+  owner       User         @relation("OwnerProperties", fields: [ownerId], references: [id])
+  title       String
+  description String?
+  type        PropertyType @default(APARTMENT)
+  address     String
+  city        String
+  area        String?
+  amenities   String[]     @default([])
+  images      String[]     @default([])
+  isPublished Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  rooms       Room[]
+
+  @@index([city])
+  @@index([ownerId])
+  @@map("properties")
+}
+
+model Room {
+  id            String     @id @default(uuid())
+  propertyId    String
+  property      Property   @relation(fields: [propertyId], references: [id])
+  roomNumber    String
+  capacity      Int        @default(1)
+  currentOccupancy Int     @default(0)
+  rentAmount    Decimal    @db.Decimal(10, 2)
+  depositAmount Decimal    @db.Decimal(10, 2) @default(0)
+  status        RoomStatus @default(AVAILABLE)
+  description   String?
+  images        String[]   @default([])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  viewingRequests ViewingRequest[]
+  applications    Application[]
+  tenancies       Tenancy[]
+
+  @@unique([propertyId, roomNumber])
+  @@index([status])
+  @@index([rentAmount])
+  @@map("rooms")
+}
+
+// ==========================================================
+// ROOMMATE MATCHING
+// ==========================================================
+
+model RoommatePreference {
+  id              String   @id @default(uuid())
+  tenantId        String   @unique
+  tenant          User     @relation(fields: [tenantId], references: [id])
+  budgetMin       Decimal  @db.Decimal(10, 2)
+  budgetMax       Decimal  @db.Decimal(10, 2)
+  preferredCity   String
+  preferredArea   String?
+  genderPref      String?
+  lifestyleTags   String[] @default([]) // e.g. ["non-smoker", "early-riser", "pet-friendly"]
+  moveInFrom      DateTime?
+  bio             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([preferredCity])
+  @@map("roommate_preferences")
+}
+
+// ==========================================================
+// VIEWING REQUESTS
+// ==========================================================
+
+model ViewingRequest {
+  id            String        @id @default(uuid())
+  tenantId      String
+  tenant        User          @relation("TenantViewings", fields: [tenantId], references: [id])
+  roomId        String
+  room          Room          @relation(fields: [roomId], references: [id])
+  requestedDate DateTime
+  status        ViewingStatus @default(PENDING)
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  @@index([roomId, requestedDate])
+  @@index([status])
+  @@map("viewing_requests")
+}
+
+// ==========================================================
+// APPLICATIONS -> TENANCY
+// ==========================================================
+
+model Application {
+  id           String            @id @default(uuid())
+  tenantId     String
+  tenant       User              @relation("TenantApplications", fields: [tenantId], references: [id])
+  roomId       String
+  room         Room              @relation(fields: [roomId], references: [id])
+  moveInDate   DateTime
+  message      String?
+  status       ApplicationStatus @default(PENDING)
+  reviewedById String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+
+  tenancy      Tenancy?
+
+  @@index([status])
+  @@index([roomId])
+  @@map("applications")
+}
+
+model Tenancy {
+  id            String        @id @default(uuid())
+  applicationId String?       @unique
+  application   Application?  @relation(fields: [applicationId], references: [id])
+  tenantId      String
+  tenant        User          @relation("TenantTenancies", fields: [tenantId], references: [id])
+  roomId        String
+  room          Room          @relation(fields: [roomId], references: [id])
+  startDate     DateTime
+  endDate       DateTime?
+  rentAmount    Decimal       @db.Decimal(10, 2)
+  status        TenancyStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  invoices           Invoice[]
+  maintenanceRequests MaintenanceRequest[]
+
+  @@index([status])
+  @@index([roomId])
+  @@map("tenancies")
+}
+
+// ==========================================================
+// BILLING / INVOICES / PAYMENTS
+// ==========================================================
+
+model Invoice {
+  id            String        @id @default(uuid())
+  tenancyId     String
+  tenancy       Tenancy       @relation(fields: [tenancyId], references: [id])
+  recipientId   String
+  recipient     User          @relation("InvoiceRecipient", fields: [recipientId], references: [id])
+  type          InvoiceType   @default(RENT)
+  amount        Decimal       @db.Decimal(10, 2)
+  dueDate       DateTime
+  status        InvoiceStatus @default(PENDING)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  payments      Payment[]
+
+  @@index([status, dueDate])
+  @@index([tenancyId])
+  @@map("invoices")
+}
+
+model Payment {
+  id                    String        @id @default(uuid())
+  invoiceId             String
+  invoice               Invoice       @relation(fields: [invoiceId], references: [id])
+  userId                String
+  user                  User          @relation(fields: [userId], references: [id])
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("usd")
+  status                PaymentStatus @default(INITIATED)
+  stripeSessionId       String?       @unique
+  stripePaymentIntentId String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([status])
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+// ==========================================================
+// MAINTENANCE
+// ==========================================================
+
+model MaintenanceRequest {
+  id          String              @id @default(uuid())
+  tenancyId   String
+  tenancy     Tenancy             @relation(fields: [tenancyId], references: [id])
+  tenantId    String
+  tenant      User                @relation("TenantMaintenance", fields: [tenantId], references: [id])
+  title       String
+  description String
+  priority    MaintenancePriority @default(MEDIUM)
+  status      MaintenanceStatus   @default(OPEN)
+  images      String[]            @default([])
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+  @@index([tenancyId])
+  @@map("maintenance_requests")
+}
+
+// ==========================================================
+// NOTIFICATIONS / AUDIT LOGS
+// ==========================================================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("audit_logs")
+}

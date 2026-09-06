@@ -1,0 +1,969 @@
+{
+    "info": {
+        "name": "Housing & Roommate Management Platform API",
+        "description": "B7A6 Assignment - Housing & Roommate Platform. Base URL variable: {{baseUrl}} = http://localhost:5000/api/v1",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:5000/api/v1"
+        },
+        {
+            "key": "accessToken",
+            "value": ""
+        },
+        {
+            "key": "refreshToken",
+            "value": ""
+        },
+        {
+            "key": "propertyId",
+            "value": ""
+        },
+        {
+            "key": "roomId",
+            "value": ""
+        },
+        {
+            "key": "applicationId",
+            "value": ""
+        },
+        {
+            "key": "tenancyId",
+            "value": ""
+        },
+        {
+            "key": "invoiceId",
+            "value": ""
+        }
+    ],
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/auth/register",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Jane Tenant\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"Passw0rd!\",\n  \"role\": \"TENANT\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/auth/login",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"admin@housing.com\",\n  \"password\": \"Admin@12345\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Refresh Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/auth/refresh-token",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/auth/logout"
+                    }
+                },
+                {
+                    "name": "Change Password",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/auth/change-password",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"oldPassword\": \"Admin@12345\",\n  \"newPassword\": \"NewPassw0rd!\"\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Users",
+            "item": [
+                {
+                    "name": "Get My Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/users/me"
+                    }
+                },
+                {
+                    "name": "Update My Profile",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/users/me",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Jane Updated\",\n  \"phone\": \"+8801000000\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Admin] List Users (paginated + filter)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/users?page=1&limit=10&role=TENANT&search=jane"
+                    }
+                },
+                {
+                    "name": "[Admin] Update User Role",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/users/:id/role",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"role\": \"OWNER\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Admin] Deactivate User (soft delete)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/users/:id"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Properties",
+            "item": [
+                {
+                    "name": "List Properties (public, paginated/filtered)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": "{{baseUrl}}/properties?page=1&limit=10&city=Sylhet&sortBy=createdAt&order=desc"
+                    }
+                },
+                {
+                    "name": "Get Property By Id",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": "{{baseUrl}}/properties/{{propertyId}}"
+                    }
+                },
+                {
+                    "name": "[Owner] My Properties",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/properties/my-properties"
+                    }
+                },
+                {
+                    "name": "[Owner] Create Property",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/properties",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Green Valley Residence\",\n  \"type\": \"APARTMENT\",\n  \"address\": \"12 Valley Road\",\n  \"city\": \"Sylhet\",\n  \"amenities\": [\"WiFi\", \"Parking\"]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Owner] Update Property",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/properties/{{propertyId}}",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"description\": \"Updated description\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Owner] Delete Property (soft delete)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/properties/{{propertyId}}"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Rooms",
+            "item": [
+                {
+                    "name": "List Available Rooms",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": "{{baseUrl}}/rooms?page=1&limit=10&city=Sylhet"
+                    }
+                },
+                {
+                    "name": "Get Room By Id",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": "{{baseUrl}}/rooms/{{roomId}}"
+                    }
+                },
+                {
+                    "name": "[Owner] Add Room to Property",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/rooms/property/{{propertyId}}",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomNumber\": \"A-101\",\n  \"capacity\": 2,\n  \"rentAmount\": 150,\n  \"depositAmount\": 150\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Owner] Update Room",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/rooms/{{roomId}}",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"rentAmount\": 175\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Owner] Delete Room (soft delete)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/rooms/{{roomId}}"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Roommate Matching",
+            "item": [
+                {
+                    "name": "[Tenant] Set/Update Preference",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/roommates/preference",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"budgetMin\": 100,\n  \"budgetMax\": 250,\n  \"preferredCity\": \"Sylhet\",\n  \"lifestyleTags\": [\"non-smoker\", \"early-riser\"]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Tenant] My Preference",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/roommates/preference/me"
+                    }
+                },
+                {
+                    "name": "[Tenant] Find Roommate Matches",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/roommates/matches"
+                    }
+                },
+                {
+                    "name": "[Tenant] Find Matching Rooms",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/roommates/matching-rooms"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Viewing Requests",
+            "item": [
+                {
+                    "name": "[Tenant] Request a Viewing",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/viewings",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"requestedDate\": \"2026-09-20T10:00:00.000Z\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Tenant] My Viewing Requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/viewings/my-requests"
+                    }
+                },
+                {
+                    "name": "[Owner] Incoming Viewing Requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/viewings/incoming"
+                    }
+                },
+                {
+                    "name": "[Owner] Approve/Reject Viewing",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/viewings/:id/status",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"APPROVED\"\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Applications",
+            "item": [
+                {
+                    "name": "[Tenant] Apply for a Room",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/applications",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"moveInDate\": \"2026-10-01T00:00:00.000Z\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Tenant] My Applications",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/applications/my-applications"
+                    }
+                },
+                {
+                    "name": "[Owner] Incoming Applications",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/applications/incoming?status=PENDING"
+                    }
+                },
+                {
+                    "name": "[Owner] Review Application (Approve/Reject)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/applications/{{applicationId}}/review",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"APPROVED\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Tenant] Withdraw Application",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/applications/{{applicationId}}/withdraw"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Tenancies & Invoices",
+            "item": [
+                {
+                    "name": "[Tenant] My Tenancies",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/tenancies/my-tenancies"
+                    }
+                },
+                {
+                    "name": "[Tenant] My Invoices",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/tenancies/my-invoices"
+                    }
+                },
+                {
+                    "name": "[Owner] All Tenancies",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/tenancies"
+                    }
+                },
+                {
+                    "name": "Get Tenancy By Id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/tenancies/{{tenancyId}}"
+                    }
+                },
+                {
+                    "name": "End Tenancy",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/tenancies/{{tenancyId}}/end",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Owner] Generate Invoice",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/tenancies/{{tenancyId}}/invoices",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"type\": \"RENT\",\n  \"dueDate\": \"2026-11-01T00:00:00.000Z\"\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Payments (Stripe)",
+            "item": [
+                {
+                    "name": "Initiate Payment (Checkout Session)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/payments/initiate",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Stripe Webhook (server-to-server only)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Stripe-Signature",
+                                "value": "<provided-by-stripe>"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/payments/webhook",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        }
+                    }
+                },
+                {
+                    "name": "My Payments",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/payments/my-payments"
+                    }
+                },
+                {
+                    "name": "Get Payment Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/payments/:id"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Maintenance",
+            "item": [
+                {
+                    "name": "[Tenant] Submit Maintenance Request",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/maintenance",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"tenancyId\": \"{{tenancyId}}\",\n  \"title\": \"Leaking faucet\",\n  \"description\": \"Kitchen sink faucet is leaking\",\n  \"priority\": \"MEDIUM\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "[Tenant] My Maintenance Requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/maintenance/my-requests"
+                    }
+                },
+                {
+                    "name": "[Owner] All Maintenance Requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/maintenance?status=OPEN"
+                    }
+                },
+                {
+                    "name": "[Owner] Update Maintenance Status",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/maintenance/:id/status",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"RESOLVED\"\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Uploads",
+            "item": [
+                {
+                    "name": "Upload Images (multipart)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/uploads?folder=properties",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "images",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Notifications",
+            "item": [
+                {
+                    "name": "My Notifications",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/notifications?unread=false"
+                    }
+                },
+                {
+                    "name": "Mark One Read",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/notifications/:id/read"
+                    }
+                },
+                {
+                    "name": "Mark All Read",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/notifications/read-all"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Google OAuth",
+            "item": [
+                {
+                    "name": "Start Google Login (open in browser)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": "{{baseUrl}}/auth/google"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Admin",
+            "item": [
+                {
+                    "name": "Dashboard Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/admin/dashboard-stats"
+                    }
+                },
+                {
+                    "name": "Audit Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/admin/audit-logs?page=1&limit=20"
+                    }
+                }
+            ]
+        }
+    ]
+}
