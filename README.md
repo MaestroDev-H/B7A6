@@ -119,13 +119,13 @@ Copy the printed `whsec_...` into `STRIPE_WEBHOOK_SECRET`.
 | Owner | owner@housing.com | Owner@12345 |
 | Tenant | tenant@housing.com | Tenant@12345 |
 
-## 9. API Overview (61 endpoints across 13 resources)
+## 9. API Overview (63 endpoints across 13 resources)
 
 All responses follow: `{ "success": boolean, "message": string, "data": any, "errors"?: [] }`. Protected routes require `Authorization: Bearer <accessToken>`. Full collection in `postman/Housing-Platform.postman_collection.json`.
 
 | Category | Examples |
 |---|---|
-| Auth (5) | register, login, refresh-token, logout, change-password |
+| Auth (7) | register (with OTP dispatch), verify-email, resend-otp, login, refresh-token, logout, change-password |
 | Users (5) | me (get/update), admin list/role-update/deactivate |
 | Properties (6) | list (paginated+filtered+search), get, my-properties, create, update, delete |
 | Rooms (5) | list available, get, create under property, update, delete |

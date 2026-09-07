@@ -115,6 +115,8 @@ model User {
   provider       AuthProvider @default(LOCAL)
   googleId       String?      @unique
   isVerified     Boolean      @default(false)
+  verificationOtp        String?
+  verificationOtpExpires DateTime?
   isActive       Boolean      @default(true)
   refreshToken   String?
   createdAt      DateTime     @default(now())

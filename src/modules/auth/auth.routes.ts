@@ -2,7 +2,14 @@ import { Router } from 'express';
 import passport from 'passport';
 import { AuthController } from './auth.controller';
 import { validateRequest } from '../../middlewares/validate.middleware';
-import { registerSchema, loginSchema, refreshTokenSchema, changePasswordSchema } from './auth.validation';
+import {
+    registerSchema,
+    loginSchema,
+    refreshTokenSchema,
+    changePasswordSchema,
+    verifyEmailSchema,
+    resendOtpSchema,
+} from './auth.validation';
 import { authenticate } from '../../middlewares/auth.middleware';
 import { authLimiter } from '../../middlewares/rateLimiter';
 
@@ -23,6 +30,8 @@ router.get('/google/failure', (_req, res) => {
 });
 
 router.post('/register', authLimiter, validateRequest(registerSchema), AuthController.register);
+router.post('/verify-email', authLimiter, validateRequest(verifyEmailSchema), AuthController.verifyEmail);
+router.post('/resend-otp', authLimiter, validateRequest(resendOtpSchema), AuthController.resendOtp);
 router.post('/login', authLimiter, validateRequest(loginSchema), AuthController.login);
 router.post('/refresh-token', validateRequest(refreshTokenSchema), AuthController.refreshToken);
 router.post('/logout', authenticate, AuthController.logout);

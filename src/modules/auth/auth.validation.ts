@@ -29,3 +29,17 @@ export const changePasswordSchema = z.object({
         newPassword: z.string().min(8),
     }),
 });
+
+export const verifyEmailSchema = z.object({
+    body: z.object({
+        email: z.string().email('Invalid email address'),
+        otp: z.string().length(6, 'OTP must be exactly 6 digits'),
+    }),
+});
+
+export const resendOtpSchema = z.object({
+    body: z.object({
+        email: z.string().email('Invalid email address'),
+    }),
+});
+

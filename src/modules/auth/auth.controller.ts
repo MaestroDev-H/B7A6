@@ -7,7 +7,19 @@ import { User } from '@prisma/client';
 export const AuthController = {
     register: catchAsync(async (req: Request, res: Response) => {
         const result = await AuthService.register(req.body);
-        sendSuccess(res, { statusCode: 201, message: 'Registration successful', data: result });
+        sendSuccess(res, { statusCode: 201, message: result.message, data: result.user });
+    }),
+
+    verifyEmail: catchAsync(async (req: Request, res: Response) => {
+        const { email, otp } = req.body;
+        const result = await AuthService.verifyEmail(email, otp);
+        sendSuccess(res, { message: 'Email verified successfully', data: result });
+    }),
+
+    resendOtp: catchAsync(async (req: Request, res: Response) => {
+        const { email } = req.body;
+        const result = await AuthService.resendOtp(email);
+        sendSuccess(res, { message: result.message, data: { email: result.email } });
     }),
 
     login: catchAsync(async (req: Request, res: Response) => {
