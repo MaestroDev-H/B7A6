@@ -33,8 +33,10 @@ export const RoommateService = {
             include: { tenant: { select: { id: true, name: true, avatar: true } } },
         });
 
+        const myTags = mine.lifestyleTags || [];
         const scored = candidates.map((c) => {
-            const sharedTags = c.lifestyleTags.filter((t) => mine.lifestyleTags.includes(t));
+            const candidateTags = c.lifestyleTags || [];
+            const sharedTags = candidateTags.filter((t) => myTags.includes(t));
             const budgetOverlap =
                 Math.min(Number(mine.budgetMax), Number(c.budgetMax)) - Math.max(Number(mine.budgetMin), Number(c.budgetMin));
             const score = sharedTags.length * 10 + Math.max(0, budgetOverlap) / 10;

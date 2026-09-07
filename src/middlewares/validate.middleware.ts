@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
-import { AnyZodObject, ZodError } from 'zod';
+import { ZodTypeAny, ZodError } from 'zod';
 import { sendError } from '../utils/response';
 
 // Validates req.body / req.query / req.params against a Zod schema shaped as
 // { body?, query?, params? }. Returns a structured 400 error on failure.
-export const validateRequest = (schema: AnyZodObject) => {
+export const validateRequest = (schema: ZodTypeAny) => {
     return (req: Request, res: Response, next: NextFunction) => {
         try {
             schema.parse({

@@ -39,6 +39,8 @@ export const PaymentsService = {
             metadata: { invoiceId: invoice.id, userId },
         });
 
+        const paymentIntentId = (typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id) ?? null;
+
         const payment = await prisma.payment.create({
             data: {
                 invoiceId: invoice.id,
@@ -46,7 +48,7 @@ export const PaymentsService = {
                 amount: invoice.amount,
                 status: 'INITIATED',
                 stripeSessionId: session.id,
-                stripePaymentIntentId: (session.payment_intent as string) ?? null,
+                stripePaymentIntentId: paymentIntentId,
             },
         });
 
@@ -69,13 +71,15 @@ export const PaymentsService = {
             const invoiceId = session.metadata?.invoiceId;
             if (!invoiceId) return;
 
+            const paymentIntentId = (typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id) ?? null;
+
             const outcome = await prisma.$transaction(async (tx) => {
                 const payment = await tx.payment.findFirst({ where: { stripeSessionId: session.id } });
                 if (!payment || payment.status === 'SUCCEEDED') return null; // idempotent - already processed
 
                 await tx.payment.update({
                     where: { id: payment.id },
-                    data: { status: 'SUCCEEDED', stripePaymentIntentId: session.payment_intent as string },
+                    data: { status: 'SUCCEEDED', stripePaymentIntentId: paymentIntentId },
                 });
                 await tx.invoice.update({
                     where: { id: invoiceId },
@@ -96,10 +100,18 @@ export const PaymentsService = {
             }
         }
 
-        if (event.type === 'checkout.session.expired' || event.type === 'payment_intent.payment_failed') {
+        if (event.type === 'checkout.session.expired') {
             const session = event.data.object as Stripe.Checkout.Session;
             await prisma.payment.updateMany({
                 where: { stripeSessionId: session.id },
+                data: { status: 'FAILED' },
+            });
+        }
+
+        if (event.type === 'payment_intent.payment_failed') {
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            await prisma.payment.updateMany({
+                where: { stripePaymentIntentId: paymentIntent.id },
                 data: { status: 'FAILED' },
             });
         }

@@ -27,7 +27,8 @@ export const TenanciesController = {
     }),
 
     generateInvoice: catchAsync(async (req: Request, res: Response) => {
-        const invoice = await TenanciesService.generateInvoice(req.user!.userId, req.params.id, req.body);
+        const isAdmin = req.user!.role === 'ADMIN';
+        const invoice = await TenanciesService.generateInvoice(req.user!.userId, isAdmin, req.params.id, req.body);
         sendSuccess(res, { statusCode: 201, message: 'Invoice generated successfully', data: invoice });
     }),
 

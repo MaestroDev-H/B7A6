@@ -59,9 +59,15 @@ export const TenanciesService = {
 
     // Generates a rent/utility invoice. For UTILITY invoices in a shared room,
     // the amount is split evenly across all active tenants of that room.
-    async generateInvoice(userId: string, tenancyId: string, data: { type: 'RENT' | 'UTILITY'; amount?: number; dueDate: string }) {
-        const tenancy = await prisma.tenancy.findUnique({ where: { id: tenancyId }, include: { room: true } });
+    async generateInvoice(userId: string, isAdmin: boolean, tenancyId: string, data: { type: 'RENT' | 'UTILITY'; amount?: number; dueDate: string }) {
+        const tenancy = await prisma.tenancy.findUnique({
+            where: { id: tenancyId },
+            include: { room: { include: { property: true } } },
+        });
         if (!tenancy) throw new AppError(404, 'Tenancy not found.');
+        if (!isAdmin && tenancy.room.property.ownerId !== userId) {
+            throw new AppError(403, 'You do not manage this property.');
+        }
 
         let amount = data.amount ?? Number(tenancy.rentAmount);
 

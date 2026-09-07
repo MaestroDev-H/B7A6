@@ -1,4 +1,5 @@
 import { cloudinary } from '../../config/cloudinary';
+import { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
 import { AppError } from '../../utils/AppError';
 
 // Uploads a single in-memory buffer to Cloudinary via its upload_stream API
@@ -8,7 +9,7 @@ function uploadBuffer(buffer: Buffer, folder: string): Promise<string> {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
             { folder: `housing-platform/${folder}`, resource_type: 'image' },
-            (error, result) => {
+            (error?: UploadApiErrorResponse, result?: UploadApiResponse) => {
                 if (error || !result) return reject(error);
                 resolve(result.secure_url);
             }

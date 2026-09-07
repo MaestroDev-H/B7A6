@@ -45,36 +45,44 @@ async function main() {
         },
     });
 
-    const property = await prisma.property.create({
-        data: {
-            ownerId: owner.id,
-            title: 'Green Valley Residence',
-            description: 'A quiet shared apartment near the university.',
-            type: PropertyType.APARTMENT,
-            address: '12 Valley Road',
-            city: 'Sylhet',
-            area: 'Zindabazar',
-            amenities: ['WiFi', 'Parking', 'Laundry'],
-            rooms: {
-                create: [
-                    {
-                        roomNumber: 'A-101',
-                        capacity: 2,
-                        rentAmount: 150,
-                        depositAmount: 150,
-                        status: RoomStatus.AVAILABLE,
-                    },
-                    {
-                        roomNumber: 'A-102',
-                        capacity: 1,
-                        rentAmount: 220,
-                        depositAmount: 220,
-                        status: RoomStatus.AVAILABLE,
-                    },
-                ],
-            },
-        },
+    let property = await prisma.property.findFirst({
+        where: { ownerId: owner.id, title: 'Green Valley Residence' },
+        include: { rooms: true },
     });
+
+    if (!property) {
+        property = await prisma.property.create({
+            data: {
+                ownerId: owner.id,
+                title: 'Green Valley Residence',
+                description: 'A quiet shared apartment near the university.',
+                type: PropertyType.APARTMENT,
+                address: '12 Valley Road',
+                city: 'Sylhet',
+                area: 'Zindabazar',
+                amenities: ['WiFi', 'Parking', 'Laundry'],
+                rooms: {
+                    create: [
+                        {
+                            roomNumber: 'A-101',
+                            capacity: 2,
+                            rentAmount: 150,
+                            depositAmount: 150,
+                            status: RoomStatus.AVAILABLE,
+                        },
+                        {
+                            roomNumber: 'A-102',
+                            capacity: 1,
+                            rentAmount: 220,
+                            depositAmount: 220,
+                            status: RoomStatus.AVAILABLE,
+                        },
+                    ],
+                },
+            },
+            include: { rooms: true },
+        });
+    }
 
     console.log('✅ Seed complete');
     console.log({ admin: admin.email, owner: owner.email, tenant: tenant.email, property: property.title });

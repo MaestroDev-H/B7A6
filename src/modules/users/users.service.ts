@@ -74,7 +74,7 @@ export const UsersService = {
     async deactivateUser(adminId: string, targetUserId: string) {
         const updated = await prisma.user.update({
             where: { id: targetUserId },
-            data: { isActive: false, deletedAt: new Date() }, // soft delete
+            data: { isActive: false, deletedAt: new Date(), refreshToken: null }, // soft delete & revoke tokens
             select: SAFE_SELECT,
         });
         await recordAuditLog({ userId: adminId, action: 'USER_DEACTIVATED', entityType: 'User', entityId: targetUserId });

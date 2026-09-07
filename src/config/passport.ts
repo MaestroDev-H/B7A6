@@ -50,7 +50,7 @@ if (env.google.clientId && env.google.clientSecret) {
                         user = await prisma.user.update({ where: { id: user.id }, data: { googleId: profile.id } });
                     }
 
-                    return done(null, user);
+                    return done(null, { ...user, userId: user.id });
                 } catch (err) {
                     return done(err as Error);
                 }

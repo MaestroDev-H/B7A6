@@ -76,7 +76,7 @@ export const ApplicationsService = {
                     title: 'Application rejected',
                     message: 'Your room application was not approved this time.',
                 });
-                return updated;
+                return { application: updated, tenancy: null, tenantId: application.tenantId, rejected: true };
             }
 
             // status === APPROVED
@@ -140,8 +140,12 @@ export const ApplicationsService = {
                 metadata: { tenancyId: tenancy.id },
             });
 
-            return { application: updatedApplication, tenancy, tenantId: application.tenantId };
+            return { application: updatedApplication, tenancy, tenantId: application.tenantId, rejected: false };
         });
+
+        if (result.rejected) {
+            return { application: result.application, tenancy: null };
+        }
 
         // Fired after the transaction commits - notification failures must never
         // undo an already-successful approval.

@@ -9,8 +9,11 @@ declare global {
         // merge our JWT payload shape INTO Express.User rather than redeclaring
         // `Request.user` with a different type - that's what TS2717 complains
         // about when two ambient declarations disagree.
-        // eslint-disable-next-line @typescript-eslint/no-empty-interface
-        interface User extends JwtPayload { }
+        interface User extends JwtPayload {
+            id?: string;
+            name?: string;
+            avatar?: string | null;
+        }
         interface Request {
             user?: User;
         }
