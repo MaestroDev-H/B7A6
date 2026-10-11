@@ -11,6 +11,9 @@ const router = Router();
 // signature verification.
 
 router.post('/initiate', authenticate, validateRequest(initiatePaymentSchema), PaymentsController.initiate);
+router.post('/verify', authenticate, PaymentsController.verify);
+router.get('/verify', authenticate, PaymentsController.verify);
+router.get('/verify/:invoiceId', authenticate, PaymentsController.verify);
 router.get('/success', PaymentsController.successRedirect);
 router.get('/cancel', PaymentsController.cancelRedirect);
 router.get('/my-payments', authenticate, PaymentsController.myPayments);

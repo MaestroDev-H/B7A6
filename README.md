@@ -111,6 +111,21 @@ stripe listen --forward-to localhost:5000/api/v1/payments/webhook
 ```
 Copy the printed `whsec_...` into `STRIPE_WEBHOOK_SECRET`.
 
+### Stripe webhook (Vercel deployment)
+
+The deployed webhook endpoint is `https://b7-a6-six.vercel.app/api/v1/payments/webhook`.
+In Stripe's Developers → Webhooks dashboard, add that URL as an endpoint and subscribe
+to `checkout.session.completed`, `checkout.session.expired`, and
+`payment_intent.payment_failed`. Copy that endpoint's signing secret (not the local
+Stripe CLI secret) into the Vercel project's `STRIPE_WEBHOOK_SECRET` environment
+variable for the deployment environment, then redeploy. Also configure
+`STRIPE_SECRET_KEY` for the same environment. Vercel must receive the webhook as raw
+JSON so Stripe can verify its signature; the serverless entry point disables Vercel's
+automatic request body parsing for this purpose.
+
+After setup, Stripe should receive HTTP 200 from the endpoint and successful
+`checkout.session.completed` events mark the associated payment and invoice as paid.
+
 ### Demo credentials (from seed)
 
 | Role | Email | Password |

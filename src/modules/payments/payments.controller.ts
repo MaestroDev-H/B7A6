@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { catchAsync } from '../../utils/catchAsync';
 import { sendSuccess, sendError } from '../../utils/response';
 import { PaymentsService } from './payments.service';
+import { AppError } from '../../utils/AppError';
 
 export const PaymentsController = {
     initiate: catchAsync(async (req: Request, res: Response) => {
@@ -9,17 +10,28 @@ export const PaymentsController = {
         sendSuccess(res, { statusCode: 201, message: 'Payment session created', data: result });
     }),
 
+    verify: catchAsync(async (req: Request, res: Response) => {
+        const invoiceId = (req.body?.invoiceId || req.query?.invoiceId || req.params?.invoiceId) as string;
+        const sessionId = (req.body?.sessionId || req.query?.sessionId || req.query?.session_id) as string | undefined;
+        if (!invoiceId) {
+            throw new AppError(400, 'invoiceId is required.');
+        }
+
+        const result = await PaymentsService.verify(req.user!.userId, invoiceId, sessionId);
+        sendSuccess(res, { message: 'Payment verification processed', data: result });
+    }),
+
     // Raw body is required here for Stripe signature verification - see app.ts
     // where this route is mounted with express.raw() BEFORE the JSON parser.
-    webhook: async (req: Request, res: Response) => {
-        const signature = req.headers['stripe-signature'] as string;
-        try {
-            await PaymentsService.handleWebhookEvent(req.body, signature);
-            res.status(200).json({ received: true });
-        } catch (err: any) {
-            sendError(res, 400, err.message || 'Webhook error');
+    webhook: catchAsync(async (req: Request, res: Response) => {
+        const signature = req.headers['stripe-signature'];
+        if (typeof signature !== 'string') {
+            throw new AppError(400, 'Missing Stripe-Signature header.');
         }
-    },
+
+        await PaymentsService.handleWebhookEvent(req.body, signature);
+        res.status(200).json({ received: true });
+    }),
 
     getStatus: catchAsync(async (req: Request, res: Response) => {
         const isAdmin = req.user!.role === 'ADMIN';

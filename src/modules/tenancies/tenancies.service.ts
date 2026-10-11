@@ -1,6 +1,8 @@
 import { prisma } from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
 import { recordAuditLog } from '../../utils/auditLog';
+import { stripeClient } from '../payments/stripe.client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 export const TenanciesService = {
     async myTenancies(tenantId: string) {
@@ -91,10 +93,54 @@ export const TenanciesService = {
     },
 
     async myInvoices(tenantId: string) {
-        return prisma.invoice.findMany({
+        const invoices = await prisma.invoice.findMany({
             where: { recipientId: tenantId },
             include: { tenancy: { include: { room: { include: { property: true } } } }, payments: true },
             orderBy: { dueDate: 'asc' },
         });
+
+        for (const invoice of invoices) {
+            if (invoice.status === 'PENDING') {
+                const initiatedPayments = (invoice.payments || [])
+                    .filter((p) => p.status === 'INITIATED' && p.stripeSessionId)
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+                for (const initiatedPayment of initiatedPayments) {
+                    if (!initiatedPayment.stripeSessionId) continue;
+                    try {
+                        const session = await stripeClient.checkout.sessions.retrieve(initiatedPayment.stripeSessionId);
+                        if (session.payment_status === 'paid' || session.status === 'complete') {
+                            const paymentIntentId = (typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id) ?? null;
+                            await prisma.$transaction([
+                                prisma.payment.update({
+                                    where: { id: initiatedPayment.id },
+                                    data: { status: 'SUCCEEDED', stripePaymentIntentId: paymentIntentId },
+                                }),
+                                prisma.invoice.update({
+                                    where: { id: invoice.id },
+                                    data: { status: 'PAID', paidAt: new Date() },
+                                }),
+                            ]);
+                            await recordAuditLog({ action: 'PAYMENT_SUCCEEDED', entityType: 'Invoice', entityId: invoice.id });
+                            await NotificationsService.notify({
+                                userId: tenantId,
+                                type: 'PAYMENT',
+                                title: 'Payment received ✅',
+                                message: `Your payment of ${invoice.amount} was received and the invoice is now marked as paid.`,
+                            }).catch(() => {});
+                            invoice.status = 'PAID';
+                            invoice.paidAt = new Date();
+                            initiatedPayment.status = 'SUCCEEDED';
+                            initiatedPayment.stripePaymentIntentId = paymentIntentId;
+                            break;
+                        }
+                    } catch {
+                        // ignore network/stripe error
+                    }
+                }
+            }
+        }
+
+        return invoices;
     },
 };
